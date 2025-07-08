@@ -1,9 +1,9 @@
-
 export interface ElementorElement {
   id: string;
   elType: string;
   settings: Record<string, any>;
   elements?: ElementorElement[];
+  widgetType?: string;
 }
 
 export interface ElementorData {
@@ -144,10 +144,10 @@ const convertContainer = (element: ElementorElement): string => {
 };
 
 const convertWidget = (element: ElementorElement): string => {
-  const { settings = {} } = element;
-  const widgetType = settings.widgetType || element.widgetType || 'text';
+  const { settings = {}, widgetType } = element;
+  const widgetTypeToUse = widgetType || settings.widgetType || 'text';
   
-  switch (widgetType) {
+  switch (widgetTypeToUse) {
     case 'heading':
       return convertHeading(settings);
     case 'text-editor':
@@ -164,7 +164,7 @@ const convertWidget = (element: ElementorElement): string => {
     case 'divider':
       return convertDivider(settings);
     default:
-      return convertGenericWidget(settings, widgetType);
+      return convertGenericWidget(settings, widgetTypeToUse);
   }
 };
 
