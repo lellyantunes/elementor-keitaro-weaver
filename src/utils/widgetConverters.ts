@@ -1,5 +1,20 @@
 
-export const convertKeitaroWidget = (element: any): string => {
+import { Asset } from './assetManager';
+
+/**
+ * Função auxiliar para obter o caminho relativo de um ativo do mapa de ativos.
+ * @param url - A URL original do ativo.
+ * @param assets - O mapa de ativos baixados.
+ * @param subfolder - O subdiretório onde o ativo será salvo (ex: 'img/').
+ * @returns O caminho relativo (ex: 'img/imagem.png') ou a URL original como fallback.
+ */
+const getAssetPath = (url: string, assets: Map<string, Asset>, subfolder: string = 'img/'): string => {
+  const asset = assets.get(url);
+  // Se o ativo foi encontrado no mapa, retorna o caminho relativo, senão, retorna a URL original.
+  return asset ? `${subfolder}${asset.filename}` : url;
+};
+
+export const convertKeitaroWidget = (element: any, assets: Map<string, Asset>): string => {
   const { settings = {}, widgetType } = element;
   const widgetTypeToUse = widgetType || settings.widgetType || 'text';
   
@@ -12,7 +27,8 @@ export const convertKeitaroWidget = (element: any): string => {
     case 'button':
       return convertKeitaroButton(settings);
     case 'image':
-      return convertKeitaroImage(settings);
+      // Passa o mapa de ativos para a função de conversão de imagem
+      return convertKeitaroImage(settings, assets);
     case 'video':
       return convertKeitaroVideo(settings);
     case 'spacer':
@@ -20,7 +36,7 @@ export const convertKeitaroWidget = (element: any): string => {
     case 'divider':
       return convertKeitaroDivider(settings);
     default:
-      return convertKeitaroGenericWidget(settings, widgetTypeToUse);
+      return `<!-- Widget não suportado: ${widgetTypeToUse} -->`;
   }
 };
 
@@ -51,7 +67,8 @@ export const convertKeitaroText = (settings: Record<string, any>): string => {
 
 export const convertKeitaroButton = (settings: Record<string, any>): string => {
   const text = settings.text || settings.button_text || 'COMPRAR AGORA';
-  const link = settings.link?.url || settings.button_link || '{offer_url}';
+  // Usa o macro {offer} correto do Keitaro
+  const link = settings.link?.url || settings.button_link || '{offer}';
   const align = settings.align || 'center';
   const bgColor = settings.background_color || '#ff6600';
   const textColor = settings.button_text_color || '#ffffff';
@@ -68,16 +85,18 @@ export const convertKeitaroButton = (settings: Record<string, any>): string => {
   `;
 };
 
-export const convertKeitaroImage = (settings: Record<string, any>): string => {
-  const imageUrl = settings.image?.url || settings.src || '{offer_image_url}';
-  const alt = settings.image?.alt || settings.alt || '{offer_name}';
+export const convertKeitaroImage = (settings: Record<string, any>, assets: Map<string, Asset>): string => {
+  const imageUrl = settings.image?.url;
+  if (!imageUrl) return '<!-- Imagem sem URL no JSON -->';
+
+  // Obtém o caminho relativo da imagem a partir do mapa de ativos
+  const imagePath = getAssetPath(imageUrl, assets);
+  const alt = settings.image?.alt || '{offer_name}';
   const align = settings.align || 'center';
-  
-  if (!imageUrl) return '';
-  
+
   return `
     <div class="keitaro-image" style="text-align: ${align}; margin: 20px 0;" data-keitaro-element="image">
-      <img src="${imageUrl}" alt="${alt}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);" loading="lazy" />
+      <img src="${imagePath}" alt="${alt}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);" loading="lazy" />
     </div>
   `;
 };
@@ -119,18 +138,5 @@ export const convertKeitaroDivider = (settings: Record<string, any>): string => 
   
   return `
     <hr class="keitaro-divider" style="border: none; border-top: ${weight}px solid ${color}; margin: 30px 0; opacity: 0.6;" data-keitaro-element="divider" />
-  `;
-};
-
-export const convertKeitaroGenericWidget = (settings: Record<string, any>, widgetType: string): string => {
-  console.log(`Converting generic widget: ${widgetType}`, settings);
-  
-  return `
-    <div class="keitaro-widget keitaro-widget-${widgetType}" data-keitaro-element="widget" data-widget-type="${widgetType}">
-      <!-- ${widgetType} widget placeholder -->
-      <div style="padding: 20px; background: #f5f5f5; border-radius: 8px; text-align: center; color: #666;">
-        Widget: ${widgetType}
-      </div>
-    </div>
   `;
 };

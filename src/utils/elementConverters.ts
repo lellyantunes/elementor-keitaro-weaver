@@ -1,7 +1,14 @@
 
 import { ElementorElement } from './types';
+import { Asset } from './assetManager';
+import { convertKeitaroWidget } from './widgetConverters';
 
-export const convertKeitaroSection = (element: ElementorElement): string => {
+const getAssetPath = (url: string, assets: Map<string, Asset>, subfolder: string = 'img/'): string => {
+  const asset = assets.get(url);
+  return asset ? `${subfolder}${asset.filename}` : url;
+};
+
+export const convertKeitaroSection = (element: ElementorElement, assets: Map<string, Asset>): string => {
   const { settings = {}, elements = [] } = element;
   const backgroundType = settings.background_background || 'classic';
   
@@ -18,8 +25,9 @@ export const convertKeitaroSection = (element: ElementorElement): string => {
   }
   
   if (settings.background_image?.url) {
-    // KEITARO optimized background handling
-    sectionStyles += `background-image: url('{offer_image_url}');`;
+    // KEITARO optimized background handling with local images
+    const imagePath = getAssetPath(settings.background_image.url, assets);
+    sectionStyles += `background-image: url('${imagePath}');`;
     sectionStyles += 'background-size: cover; background-position: center; background-repeat: no-repeat;';
   }
   
@@ -31,7 +39,7 @@ export const convertKeitaroSection = (element: ElementorElement): string => {
     sectionStyles += 'padding: 20px 15px;';
   }
   
-  const childElements = elements.map(child => convertElement(child)).join('\n');
+  const childElements = elements.map(child => convertElement(child, assets)).join('\n');
   
   return `
     <section class="${sectionClasses}" style="${sectionStyles}"${sectionAttrs}>
@@ -44,7 +52,7 @@ export const convertKeitaroSection = (element: ElementorElement): string => {
   `;
 };
 
-export const convertKeitaroColumn = (element: ElementorElement): string => {
+export const convertKeitaroColumn = (element: ElementorElement, assets: Map<string, Asset>): string => {
   const { settings = {}, elements = [] } = element;
   const width = settings._column_size || 100;
   
@@ -58,7 +66,7 @@ export const convertKeitaroColumn = (element: ElementorElement): string => {
     columnStyles += `background-color: ${settings.background_color};`;
   }
   
-  const childElements = elements.map(child => convertElement(child)).join('\n');
+  const childElements = elements.map(child => convertElement(child, assets)).join('\n');
   
   return `
     <div class="${columnClasses}" style="${columnStyles}" data-keitaro-column="true">
@@ -67,9 +75,9 @@ export const convertKeitaroColumn = (element: ElementorElement): string => {
   `;
 };
 
-export const convertKeitaroContainer = (element: ElementorElement): string => {
+export const convertKeitaroContainer = (element: ElementorElement, assets: Map<string, Asset>): string => {
   const { elements = [] } = element;
-  const childElements = elements.map(child => convertElement(child)).join('\n');
+  const childElements = elements.map(child => convertElement(child, assets)).join('\n');
   
   return `
     <div class="keitaro-container" data-keitaro-container="true">
@@ -78,23 +86,20 @@ export const convertKeitaroContainer = (element: ElementorElement): string => {
   `;
 };
 
-export const convertElement = (element: ElementorElement): string => {
+export const convertElement = (element: ElementorElement, assets: Map<string, Asset>): string => {
   const { elType } = element;
   
   switch (elType) {
     case 'section':
-      return convertKeitaroSection(element);
+      return convertKeitaroSection(element, assets);
     case 'column':
-      return convertKeitaroColumn(element);
+      return convertKeitaroColumn(element, assets);
     case 'widget':
-      return convertKeitaroWidget(element);
+      return convertKeitaroWidget(element, assets);
     case 'container':
-      return convertKeitaroContainer(element);
+      return convertKeitaroContainer(element, assets);
     default:
       console.log(`Unknown element type: ${elType}`);
-      return convertKeitaroContainer(element);
+      return convertKeitaroContainer(element, assets);
   }
 };
-
-// Import widget converter to avoid circular dependency
-import { convertKeitaroWidget } from './widgetConverters';

@@ -4,25 +4,29 @@ import { Upload, FileJson, AlertCircle } from 'lucide-react';
 
 interface FileUploadProps {
   onFileUpload: (data: any, fileName: string) => void;
+  disabled?: boolean;
 }
 
-const FileUpload = ({ onFileUpload }: FileUploadProps) => {
+const FileUpload = ({ onFileUpload, disabled = false }: FileUploadProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
+    if (disabled) return;
     e.preventDefault();
     setIsDragOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
+    if (disabled) return;
     e.preventDefault();
     setIsDragOver(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
+    if (disabled) return;
     e.preventDefault();
     setIsDragOver(false);
     const files = e.dataTransfer.files;
@@ -32,6 +36,7 @@ const FileUpload = ({ onFileUpload }: FileUploadProps) => {
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     const files = e.target.files;
     if (files && files.length > 0) {
       handleFile(files[0]);
@@ -60,6 +65,7 @@ const FileUpload = ({ onFileUpload }: FileUploadProps) => {
   };
 
   const handleClick = () => {
+    if (disabled) return;
     fileInputRef.current?.click();
   };
 
@@ -71,10 +77,12 @@ const FileUpload = ({ onFileUpload }: FileUploadProps) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          relative border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-300
-          ${isDragOver 
-            ? 'border-blue-400 bg-blue-500/20' 
-            : 'border-gray-600 bg-white/5 hover:bg-white/10 hover:border-gray-500'
+          relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300
+          ${disabled 
+            ? 'border-gray-700 bg-gray-800/50 cursor-not-allowed opacity-50' 
+            : isDragOver 
+              ? 'border-blue-400 bg-blue-500/20 cursor-pointer' 
+              : 'border-gray-600 bg-white/5 hover:bg-white/10 hover:border-gray-500 cursor-pointer'
           }
         `}
       >
@@ -83,27 +91,33 @@ const FileUpload = ({ onFileUpload }: FileUploadProps) => {
           type="file"
           accept=".json"
           onChange={handleFileInput}
+          disabled={disabled}
           className="hidden"
         />
 
         <div className="flex flex-col items-center space-y-4">
           <div className={`
             w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300
-            ${isDragOver ? 'bg-blue-500/30' : 'bg-gray-700/50'}
+            ${disabled 
+              ? 'bg-gray-700/50' 
+              : isDragOver 
+                ? 'bg-blue-500/30' 
+                : 'bg-gray-700/50'
+            }
           `}>
             {isLoading ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
             ) : (
-              <Upload className={`h-8 w-8 ${isDragOver ? 'text-blue-400' : 'text-gray-400'}`} />
+              <Upload className={`h-8 w-8 ${disabled ? 'text-gray-600' : isDragOver ? 'text-blue-400' : 'text-gray-400'}`} />
             )}
           </div>
 
           <div>
             <h3 className="text-xl font-semibold text-white mb-2">
-              {isLoading ? 'Processando arquivo...' : 'Upload do JSON do Elementor'}
+              {isLoading ? 'Processando arquivo...' : disabled ? 'Upload desabilitado durante conversão' : 'Upload do JSON do Elementor'}
             </h3>
             <p className="text-gray-300 mb-4">
-              Arraste e solte seu arquivo JSON aqui ou clique para selecionar
+              {disabled ? 'Aguarde a conclusão da conversão atual' : 'Arraste e solte seu arquivo JSON aqui ou clique para selecionar'}
             </p>
             
             <div className="flex items-center justify-center space-x-2 text-sm text-gray-400">

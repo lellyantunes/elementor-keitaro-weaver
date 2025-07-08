@@ -34,10 +34,14 @@ export const generateErrorHTML = (error: any): string => {
   `;
 };
 
+/**
+ * Gera o HTML final da landing page, agora lincando a um arquivo CSS externo.
+ * @param contentHtml - O conteúdo HTML do corpo da página.
+ * @returns A string HTML completa.
+ */
 export const generateKeitaroHTML = (contentHtml: string): string => {
   const htmlParts: string[] = [];
   
-  // KEITARO specific HTML structure
   htmlParts.push('<!DOCTYPE html>');
   htmlParts.push('<html>');
   htmlParts.push('<head>');
@@ -46,11 +50,10 @@ export const generateKeitaroHTML = (contentHtml: string): string => {
   htmlParts.push('  <title>{offer_name} - {campaign_name}</title>');
   htmlParts.push('  <meta name="description" content="{offer_description}">');
   htmlParts.push('  <meta name="robots" content="noindex, nofollow">');
-  htmlParts.push('  <style>');
-  htmlParts.push(getKeitaroOptimizedCSS());
-  htmlParts.push('  </style>');
+  // Link para o arquivo de estilo local
+  htmlParts.push('  <link rel="stylesheet" href="style.css">');
   
-  // KEITARO tracking pixels and scripts
+  // Scripts de tracking do Keitaro (pode ser expandido conforme necessário)
   htmlParts.push('  <!-- KEITARO Tracking -->');
   htmlParts.push('  <script>');
   htmlParts.push('    var _keitaro = _keitaro || [];');
@@ -59,23 +62,9 @@ export const generateKeitaroHTML = (contentHtml: string): string => {
   htmlParts.push('</head>');
   
   htmlParts.push('<body>');
-  htmlParts.push('  <!-- KEITARO Landing Page -->');
   htmlParts.push('  <div class="keitaro-landing-wrapper">');
-  
   htmlParts.push(contentHtml);
-  
   htmlParts.push('  </div>');
-  
-  // KEITARO conversion tracking
-  htmlParts.push('  <!-- KEITARO Conversion Tracking -->');
-  htmlParts.push('  <script>');
-  htmlParts.push('    function keitaroConversion(action) {');
-  htmlParts.push('      if (typeof _keitaro !== "undefined") {');
-  htmlParts.push('        _keitaro.push(["trackEvent", action]);');
-  htmlParts.push('      }');
-  htmlParts.push('    }');
-  htmlParts.push('  </script>');
-  
   htmlParts.push('</body>');
   htmlParts.push('</html>');
   

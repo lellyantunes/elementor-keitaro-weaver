@@ -1,12 +1,24 @@
 
-import { ElementorElement, ElementorData } from './types';
+import { ElementorElement } from './types';
 import { convertElement } from './elementConverters';
-import { generateErrorHTML, generateKeitaroHTML } from './htmlGenerator';
+import { generateKeitaroHTML, generateErrorHTML } from './htmlGenerator';
+import { fetchAssets, Asset } from './assetManager';
+import { getKeitaroOptimizedCSS } from './keitaroStyles';
 
-export const convertElementorToKeitaro = (jsonData: any): string => {
-  console.log('Converting Elementor JSON to KEITARO HTML:', jsonData);
+export interface ConversionResult {
+  html: string;
+  assets: Map<string, Asset>;
+  css: string;
+}
+
+export const convertElementorToKeitaro = async (jsonData: any): Promise<ConversionResult> => {
+  console.log('Iniciando processo de conversão para Keitaro...');
   
   try {
+    // Primeiro, busca todos os assets de imagem
+    const assets = await fetchAssets(jsonData);
+    console.log(`Ativos buscados: ${assets.size}`);
+
     let content: ElementorElement[] = [];
     
     // Handle different JSON structures
@@ -18,13 +30,23 @@ export const convertElementorToKeitaro = (jsonData: any): string => {
       content = jsonData.elements;
     }
 
-    // Convert elements with KEITARO structure
-    const contentHtml = content.map(element => convertElement(element)).join('\n');
+    // Convert elements with KEITARO structure and asset references
+    const contentHtml = content.map(element => convertElement(element, assets)).join('\n');
     
-    return generateKeitaroHTML(contentHtml);
+    // Get the CSS content
+    const css = getKeitaroOptimizedCSS();
+    
+    // Generate the final HTML with external CSS reference
+    const finalHtml = generateKeitaroHTML(contentHtml);
+
+    return { html: finalHtml, assets, css };
   } catch (error) {
-    console.error('Error converting Elementor to KEITARO:', error);
-    return generateErrorHTML(error);
+    console.error('Erro ao converter para Keitaro:', error);
+    return {
+      html: generateErrorHTML(error),
+      assets: new Map(),
+      css: '',
+    };
   }
 };
 
